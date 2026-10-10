@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.idea/
+textfile/high_score.txt
