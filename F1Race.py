@@ -16,9 +16,13 @@ import os
 import sys
 import math
 import random
+import asyncio
 import pygame
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# True when running in the browser (pygbag / WebAssembly build)
+IS_WEB = sys.platform == "emscripten"
 
 
 def asset(*parts):
@@ -151,11 +155,18 @@ class _Mute:
         pass
 
 
+def audio_file(name):
+    # browsers play Ogg Vorbis reliably, so the web build uses .ogg copies
+    if IS_WEB:
+        name = os.path.splitext(name)[0] + ".ogg"
+    return asset("audio", name)
+
+
 def load_sound(name, vol=1.0):
     if not AUDIO_OK:
         return _Mute()
     try:
-        s = pygame.mixer.Sound(asset("audio", name))
+        s = pygame.mixer.Sound(audio_file(name))
         s.set_volume(vol)
         return s
     except (pygame.error, FileNotFoundError):
@@ -218,7 +229,7 @@ SND_IGNITION = load_sound("ignition.wav", 0.8)
 
 if AUDIO_OK:
     try:
-        pygame.mixer.music.load(asset("audio", "running.wav"))
+        pygame.mixer.music.load(audio_file("running.wav"))
         MUSIC_OK = True
     except pygame.error:
         MUSIC_OK = False
@@ -874,7 +885,7 @@ class Game:
                     self.start_lights()
             if ready and self.btn_start.clicked(ev):
                 self.start_lights()
-            if ready and self.btn_quit.clicked(ev):
+            if ready and not IS_WEB and self.btn_quit.clicked(ev):
                 return False
 
         elif self.state in (RACE, LIGHTS):
@@ -979,7 +990,8 @@ class Game:
         if self.menu_t > 1.6:
             text(screen, "BEST  %d" % self.best, F_MED, YELLOW, center=(W // 2, 300))
             self.btn_start.draw(screen)
-            self.btn_quit.draw(screen)
+            if not IS_WEB:            # a browser tab can't be "quit"
+                self.btn_quit.draw(screen)
             lines = ["W: throttle     S: brake     A/D: steer",
                      "SHIFT: DRS when the meter is full     SPACE: pause"]
             for i, l in enumerate(lines):
@@ -1113,7 +1125,7 @@ class Game:
         text(screen, "%d" % data[i_top][1], F_TINY, YELLOW, center=(px, py - 12), shadow=False)
 
 
-def main():
+async def main():
     game = Game()
     running = True
     while running:
@@ -1121,13 +1133,15 @@ def main():
         # step that teleports the car through a wall (tunneling)
         dt = min(clock.tick(FPS) / 1000.0, 1 / 30)
         for ev in pygame.event.get():
-            if not game.handle(ev):
+            if not game.handle(ev) and not IS_WEB:
                 running = False
         game.update(dt)
         game.draw()
+        # hand control back to the browser once per frame (no-op on desktop)
+        await asyncio.sleep(0)
     pygame.quit()
     sys.exit()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -2,6 +2,10 @@
 
 A top-down endless racer written in Python with pygame.
 
+**Play it in the browser:** [omerburhan.com/F1-Race-Road-Game](https://omerburhan.com/F1-Race-Road-Game/)
+(the same Python code, compiled to WebAssembly with [pygbag](https://github.com/pygame-web/pygbag);
+the first load takes a few seconds). To rebuild it into `docs/`: `pip install pygbag`, then `python build_web.py` (needs ffmpeg).
+
 ![F1 Race Road](images/screenshot.png)
 
 ## How it works
