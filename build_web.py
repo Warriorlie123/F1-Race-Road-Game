@@ -4,7 +4,7 @@
     python build_web.py
 
 Needs ffmpeg on PATH. The script copies the game into a temporary folder,
-converts every .wav/.mp3 to .ogg (browsers play Ogg Vorbis reliably and the
+converts every sound to 44.1 kHz .ogg (browsers play Ogg Vorbis reliably and the
 download gets much smaller), runs pygbag on that copy, and puts index.html,
 the game archive and the icon into docs/. The desktop game is not changed.
 """
@@ -30,10 +30,12 @@ def copy_game(dst: Path):
             continue
         out = dst / rel
         out.parent.mkdir(parents=True, exist_ok=True)
-        if src.suffix.lower() in (".wav", ".mp3"):
-            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(src),
+        if src.suffix.lower() in (".wav", ".mp3", ".ogg"):
+            # one format and one sample rate (44.1 kHz, same as the mixer) so the
+            # browser doesn't have to resample every sound while the game runs
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(src), "-ar", "44100",
                             "-c:a", "libvorbis", "-q:a", "4", str(out.with_suffix(".ogg"))], check=True)
-        elif src.suffix.lower() in (".py", ".png", ".jpg", ".ttf", ".otf", ".ogg", ".json", ".txt", ".csv"):
+        elif src.suffix.lower() in (".py", ".png", ".jpg", ".ttf", ".otf", ".json", ".txt", ".csv"):
             shutil.copy2(src, out)
 
 

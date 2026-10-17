@@ -132,6 +132,10 @@ def engine_state(v_ms):
 
 # ---------------------------------------------------------------- init
 
+# In the browser the game shares one thread with the page, so the sound card
+# needs a bigger buffer (2048 samples, ~46 ms) or the audio crackles.
+if IS_WEB:
+    pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 try:
     pygame.mixer.init()
